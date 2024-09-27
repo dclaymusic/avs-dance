@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=0.8" />
+<title>AVS Dance Maker - v1.0</title>
+<script src="snd.js"></script>
+<script src="play.js"></script>
+<script src="mouse.js"></script>
+<script src="start.js"></script>
+<script src="map.js"></script>
+<script type="text/javascript">
+
+    var hasStarted = false;
+    var soundInit = false;
+    var infoWindow = false;
+    var isPlaying = false;
+    var allBuffersLoaded = false;
+    var activeSounds = [];
+    var tempo = 545.454545455;
+    var timer;
+    var loadedSnd = 0;
+    var sequenceStep = 0;
+    var availableSounds = 6; // this is 24 because there are 24 sounds in the left div.
+    var tileset = null, tilesetURL = "tiles.png",  tilesetLoaded = false;
+    const scale = 2;
+    const w = 800;
+    const h = 400;
+    const width = w*scale;
+    const height = h*scale;
+    const tileW = 200;
+    const tileH = 200;
+    var mapW = 8;
+    var mapH = 4;
+    var gameMap = [];
+
+    // //opening game map
+    // for(let i = 0; i < mapW*mapH; i++) { gameMap[i] = 0; }
+    gameMap = [
+        3,3,6,6,3,3,6,6,
+        2,2,1,1,2,2,1,1,
+        3,3,4,4,6,6,4,4,
+        5,5,3,2,5,5,4,2
+    ]
+    
+
+    var ctx = null;
+    var currentSecond = 0, frameCount = 0, framesLastSecond = 0, lastFrameTime = 0;
+    var mousePos = [];
+    var loading;
+    var instrumentChoice = 's';
+    var numberOfLayers = 1;
+    var stepIndex = [0,0];
+    var countOff = 0;
+
+    var tileTypes = {
+
+        0: { }, //blank
+        1: { index: 's1', sprite:[{x:tileW*0, y:tileH*0, w:tileW, h:tileH}]},
+        2: { index: 's2', sprite:[{x:tileW*1, y:tileH*0, w:tileW, h:tileH}]},
+        3: { index: 's3', sprite:[{x:tileW*2, y:tileH*0, w:tileW, h:tileH}]},
+        4: { index: 's4', sprite:[{x:tileW*0, y:tileH*1, w:tileW, h:tileH}]},
+        5: { index: 's5', sprite:[{x:tileW*0, y:tileH*2, w:tileW, h:tileH}]}, //strong
+        6: { index: 's6', sprite:[{x:tileW*2, y:tileH*1, w:tileW, h:tileH}]},
+
+    }
+
+    //var masterGain = audioCtx.createGain();
+    //Viewport Scanning
+    var viewport = { screen : [0,0] };
+
+    window.onload = function()
+    {
+        ctx = document.getElementById('game').getContext("2d");
+        requestAnimationFrame(drawGame);
+        ctx.font = "bold 10pt sans-serif";
+
+        //window.addEventListener('mousemove', function(e) { getHoverOver(e) });
+        window.addEventListener('click', function(e) { clickHandler(e) });
+        window.addEventListener('mousemove', function(e) { mousePos = getHoverOver(e); });
+        
+        viewport.screen = [document.getElementById('game').width,
+            document.getElementById('game').height];
+
+        //tileset code goes here
+        loadImages();
+        
+    };
+
+    
+    function drawGame()
+    {
+        if(ctx==null) { return; }
+        var currentFrameTime = Date.now();
+        var timeElapsed = currentFrameTime - lastFrameTime;
+        var sec = Math.floor(Date.now()/1000);
+        if(sec!=currentSecond)
+        {
+            currentSecond = sec;
+            framesLastSecond = frameCount;
+            frameCount = 1;
+        }
+        else { frameCount++; }
+
+        //////////////////////////////draw background
+        ctx.fillStyle = "rgb(176, 193, 255)";
+        ctx.fillRect(0, 0, viewport.screen[0], viewport.screen[1]);
+
+        //draw map
+        if(hasStarted) //app is playing 
+        { 
+            drawCurrentMap();
+            drawCursor();
+            if(isPlaying) { drawStepSequencer(); }
+            drawGridlines();
+            drawSectionLines(numberOfLayers);
+
+        }
+        // else if(!hasStarted) //loading sounds
+        // { loadbarHandler(); }
+
+        // frameRate();
+        lastFrameTime = currentFrameTime;
+        requestAnimationFrame(drawGame);
+    }
+
+
+</script>
+
+</head>
+<body>
+<h1 id="title">AVS Dance Maker</h1>
+<div id="main">
+    <div id="loadscreen">
+        <!-- <h1 id="title">Body Beats!</h1> -->
+        <p id="description">Practice our school dance, or make one of your own!</p>
+        <!-- <div id="loadbarfull"> </div>
+        <div id="loadbarloading"></div> -->
+        <img id="avs" src="img/avs.png">
+        <p id="loadtext">Click anywhere to load sounds.</p>
+    </div>
+    <div id=mainscreen>
+        <div id="leftdiv">
+            <div>
+                <p id="soundtitle">Moves:</p>
+                <div id="sounddiv">
+                    <img id="s1" class='sound' src="img/s1.png" onclick="pickSnd(1)">
+                    <img id="s2" class='sound' src="img/s2.png" onclick="pickSnd(2)">
+                    <img id="s3" class='sound' src="img/s3.png" onclick="pickSnd(3)">
+                    <img id="s4" class='sound' src="img/s4.png" onclick="pickSnd(4)">
+                    <img id="s5" class='sound' src="img/s5.png" onclick="pickSnd(5)">
+                    <img id="s6" class='sound' src="img/s6.png" onclick="pickSnd(6)">
+                </div> 
+            </div>
+        </div>
+        <canvas id="game" width="1600" height="800"></canvas>
+        <div id="rightdiv"> 
+            <button id="play" onclick="togglePlay()">Play</button>
+            <div id="tempodiv">
+                <label for="tempo">
+                Tempo:
+              </label>
+              <input onchange="changeTempo()" type="number" step="1" id="tempo" min="60" max="999" value="110" />
+            </div>
+            <div id="layerdiv">
+                <label for="layers">Tempo:<br></label>
+                <select name="layers" onchange="toggleLayers()" id="layers">
+                    <option value="1">Allegro</option>
+                    <option value="2">Largo</option>
+                </select>
+            </div>
+            <button id="shuffle" onclick="shuffle()">Shuffle</button>
+            <button id="clear" onclick="clearAll()">Clear</button>
+        </div>
+    </div>
+</div> 
+<h1></h1>
+</body>
+</html>
