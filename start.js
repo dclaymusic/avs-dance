@@ -15,6 +15,7 @@ function startGame() {
     document.querySelector('#shuffle').style.visibility = 'visible';
     document.querySelector('#clear').style.visibility = 'visible';
     document.querySelector('#layerdiv').style.visibility = 'visible';
+    document.querySelector('#reset').style.visibility = 'visible';
 
 
 
@@ -118,6 +119,18 @@ function toggleLayers()
 
     }
     selectSnd('click');
+}
+
+
+function reset()
+{
+    selectSnd('click');
+    gameMap = [
+        3,3,6,6,3,3,6,6,
+        2,2,1,1,2,2,1,1,
+        3,3,4,4,6,6,4,4,
+        5,5,3,2,5,5,4,2
+    ];
 }
 
 // function resetTimer()

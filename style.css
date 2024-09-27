@@ -37,7 +37,7 @@ canvas {
     justify-content: space-around;   
 }
 
-#soundtitle, #sounddiv, #play, #tempodiv, #shuffle, #clear, #layerdiv { visibility: hidden; }
+#soundtitle, #sounddiv, #play, #tempodiv, #shuffle, #clear, #layerdiv, #reset { visibility: hidden; }
 
 #soundtitle { 
     margin-top: 0px; 
